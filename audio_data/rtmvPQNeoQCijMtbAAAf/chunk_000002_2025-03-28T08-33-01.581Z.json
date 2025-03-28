@@ -1,0 +1,24 @@
+{
+  "chunkId": 2,
+  "timestamp": "2025-03-28T08:33:01.581Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6767,
+  "sessionId": "rtmvPQNeoQCijMtbAAAf",
+  "fileName": "chunk_000002_2025-03-28T08-33-01.581Z",
+  "transcription": {
+    "success": true,
+    "text": "And this time it's an advanced lesson. That's right. We're heading",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 4351
+  },
+  "translation": {
+    "success": true,
+    "originalText": "And this time it's an advanced lesson. That's right. We're heading",
+    "translatedText": "이번에는 고급 레슨입니다. 맞습니다. 우리는 다음과 같이 향하고 있습니다",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

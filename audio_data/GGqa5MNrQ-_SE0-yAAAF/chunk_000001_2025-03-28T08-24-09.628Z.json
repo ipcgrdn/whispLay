@@ -1,0 +1,24 @@
+{
+  "chunkId": 1,
+  "timestamp": "2025-03-28T08:24:09.628Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6144,
+  "sessionId": "GGqa5MNrQ-_SE0-yAAAF",
+  "fileName": "chunk_000001_2025-03-28T08-24-09.628Z",
+  "transcription": {
+    "success": true,
+    "text": "Hi, my name is Choi Jungwon.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 2437
+  },
+  "translation": {
+    "success": true,
+    "originalText": "Hi, my name is Choi Jungwon.",
+    "translatedText": "안녕하세요, 최정원입니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

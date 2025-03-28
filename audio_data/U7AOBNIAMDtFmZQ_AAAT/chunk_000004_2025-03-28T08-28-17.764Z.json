@@ -1,0 +1,24 @@
+{
+  "chunkId": 4,
+  "timestamp": "2025-03-28T08:28:17.764Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6716,
+  "sessionId": "U7AOBNIAMDtFmZQ_AAAT",
+  "fileName": "chunk_000004_2025-03-28T08-28-17.764Z",
+  "transcription": {
+    "success": true,
+    "text": "between past simple and past",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 3252
+  },
+  "translation": {
+    "success": true,
+    "originalText": "between past simple and past",
+    "translatedText": "과거 단순과 과거",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

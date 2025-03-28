@@ -1,0 +1,24 @@
+{
+  "chunkId": 4,
+  "timestamp": "2025-03-28T08:33:07.612Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6635,
+  "sessionId": "rtmvPQNeoQCijMtbAAAf",
+  "fileName": "chunk_000004_2025-03-28T08-33-07.612Z",
+  "transcription": {
+    "success": true,
+    "text": "All right, so we're going to be learning about skiing.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1390
+  },
+  "translation": {
+    "success": true,
+    "originalText": "All right, so we're going to be learning about skiing.",
+    "translatedText": "자, 이제 스키에 대해 배워보겠습니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

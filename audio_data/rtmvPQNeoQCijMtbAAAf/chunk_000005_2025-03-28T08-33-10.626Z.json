@@ -1,0 +1,24 @@
+{
+  "chunkId": 5,
+  "timestamp": "2025-03-28T08:33:10.626Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6823,
+  "sessionId": "rtmvPQNeoQCijMtbAAAf",
+  "fileName": "chunk_000005_2025-03-28T08-33-10.626Z",
+  "transcription": {
+    "success": true,
+    "text": "a winter sport and very popular throughout the world.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1649
+  },
+  "translation": {
+    "success": true,
+    "originalText": "a winter sport and very popular throughout the world.",
+    "translatedText": "겨울 스포츠이자 전 세계적으로 매우 인기 있는 스포츠입니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

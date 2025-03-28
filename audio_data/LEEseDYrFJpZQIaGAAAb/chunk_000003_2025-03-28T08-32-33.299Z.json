@@ -1,0 +1,24 @@
+{
+  "chunkId": 3,
+  "timestamp": "2025-03-28T08:32:33.299Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6546,
+  "sessionId": "LEEseDYrFJpZQIaGAAAb",
+  "fileName": "chunk_000003_2025-03-28T08-32-33.299Z",
+  "transcription": {
+    "success": true,
+    "text": "Well, we went off for a couple of beers and a funny singer.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1408
+  },
+  "translation": {
+    "success": true,
+    "originalText": "Well, we went off for a couple of beers and a funny singer.",
+    "translatedText": "저희는 맥주 몇 잔과 재미있는 가수를 보러 갔습니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

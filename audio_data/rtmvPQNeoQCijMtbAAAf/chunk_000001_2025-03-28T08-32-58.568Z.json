@@ -1,0 +1,24 @@
+{
+  "chunkId": 1,
+  "timestamp": "2025-03-28T08:32:58.568Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6161,
+  "sessionId": "rtmvPQNeoQCijMtbAAAf",
+  "fileName": "chunk_000001_2025-03-28T08-32-58.568Z",
+  "transcription": {
+    "success": true,
+    "text": "Another part of our sports series,",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1620
+  },
+  "translation": {
+    "success": true,
+    "originalText": "Another part of our sports series,",
+    "translatedText": "스포츠 시리즈의 또 다른 부분입니다,",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

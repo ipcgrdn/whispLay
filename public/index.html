@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 오디오 녹음 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f5f7f9;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        #status, #log {
+            margin-top: 20px;
+        }
+        
+        #status {
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        #log {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .error {
+            color: #e74c3c;
+        }
+        
+        .success {
+            color: #27ae60;
+        }
+        
+        .info {
+            color: #3498db;
+        }
+        
+        .warning {
+            color: #f39c12;
+        }
+        
+        /* 텍스트 변환 결과 스타일 */
+        #transcription {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-left: 4px solid #3498db;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .transcript-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .transcript-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        .transcript-chunk {
+            padding: 8px 0;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        
+        .transcript-chunk:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSocket 오디오 녹음 테스트</h1>
+        
+        <div class="controls">
+            <button id="startBtn">녹음 시작</button>
+            <button id="stopBtn" disabled>녹음 종료</button>
+        </div>
+        
+        <div id="status">상태: 대기 중</div>
+        
+        <!-- 텍스트 변환 결과 영역 -->
+        <div id="transcription" style="display: none;">
+            <div class="transcript-title">텍스트 변환 결과:</div>
+            <div id="transcriptionContent" class="transcript-content"></div>
+        </div>
+        
+        <!-- 번역 결과 영역 -->
+        <div id="translation" style="display: none;">
+            <div class="transcript-title">번역 결과:</div>
+            <div id="translationContent" class="transcript-content"></div>
+        </div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 요소 참조
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const statusEl = document.getElementById('status');
+            const logEl = document.getElementById('log');
+            const transcriptionEl = document.getElementById('transcription');
+            const transcriptionContentEl = document.getElementById('transcriptionContent');
+            const translationEl = document.getElementById('translation');
+            const translationContentEl = document.getElementById('translationContent');
+            
+            // 변수 초기화
+            let socket;
+            let mediaRecorder;
+            let nextMediaRecorder; // 다음 레코더를 미리 준비
+            let audioStream;
+            let sessionId;
+            let isRecording = false;
+            let chunkCount = 0;
+            let transcriptionChunks = [];
+            let translationChunks = [];
+            
+            // 로깅 함수
+            function log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+                logEl.appendChild(entry);
+                logEl.scrollTop = logEl.scrollHeight;
+                console.log(`[${type}] ${message}`);
+            }
+            
+            // 상태 업데이트 함수
+            function updateStatus(message) {
+                statusEl.textContent = `상태: ${message}`;
+            }
+            
+            // 소켓 연결 초기화
+            function initSocket() {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    log('서버에 연결되었습니다', 'success');
+                    updateStatus('연결됨');
+                    startBtn.disabled = false;
+                });
+                
+                socket.on('connect_error', (error) => {
+                    log(`연결 오류: ${error.message}`, 'error');
+                    updateStatus('연결 오류');
+                });
+                
+                socket.on('session', (data) => {
+                    sessionId = data.sessionId;
+                    log(`세션 ID 수신: ${sessionId}`, 'info');
+                });
+                
+                socket.on('recordingStarted', (data) => {
+                    log(`녹음 시작 확인: ${data.startedAt}`, 'success');
+                    // 새 녹음 시작 시 이전 변환 결과 초기화
+                    transcriptionChunks = [];
+                    updateTranscription();
+                });
+                
+                socket.on('recordingStopped', (data) => {
+                    log(`녹음 종료 확인: 총 ${data.totalChunks}개 청크, ${data.durationSeconds}초`, 'success');
+                });
+                
+                socket.on('audioProcessed', (data) => {
+                    if (data.success) {
+                        log(`오디오 청크 ${data.chunkId} 처리됨${data.hasTranscription ? ' (텍스트 변환 성공)' : ''}`, 'success');
+                    } else {
+                        log(`오디오 청크 처리 실패: ${data.error}`, 'error');
+                    }
+                });
+                
+                socket.on('transcriptionResult', (data) => {
+                    log(`텍스트 변환 결과 수신: 청크 ${data.chunkId}`, 'success');
+                    
+                    // 변환 결과 저장 및 표시
+                    transcriptionChunks.push({
+                        chunkId: data.chunkId,
+                        text: data.text,
+                        language: data.detectedLanguage,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    
+                    updateTranscription();
+                });
+                
+                socket.on('translationResult', (data) => {
+                    log(`번역 결과 수신: 청크 ${data.chunkId}`, 'success');
+                    
+                    // 번역 결과 저장 및 표시
+                    translationChunks.push({
+                        chunkId: data.chunkId,
+                        text: data.text,
+                        isTranslated: data.isTranslated,
+                        originalLanguage: data.originalLanguage,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    
+                    updateTranslation();
+                });
+                
+                socket.on('disconnect', () => {
+                    log('서버와 연결이 끊어졌습니다', 'error');
+                    updateStatus('연결 끊김');
+                    startBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    isRecording = false;
+                    stopRecordingChunks();
+                });
+            }
+            
+            // 텍스트 변환 결과 업데이트
+            function updateTranscription() {
+                if (transcriptionChunks.length === 0) {
+                    transcriptionEl.style.display = 'none';
+                    return;
+                }
+                
+                transcriptionEl.style.display = 'block';
+                
+                // 전체 텍스트를 하나로 표시
+                const fullText = transcriptionChunks
+                    .sort((a, b) => a.chunkId - b.chunkId)
+                    .map(chunk => chunk.text)
+                    .join(' ');
+                
+                transcriptionContentEl.innerHTML = '';
+                
+                // 전체 텍스트를 표시
+                const textEl = document.createElement('div');
+                textEl.className = 'transcript-chunk';
+                textEl.textContent = fullText;
+                transcriptionContentEl.appendChild(textEl);
+            }
+            
+            // 번역 결과 업데이트
+            function updateTranslation() {
+                if (translationChunks.length === 0) {
+                    translationEl.style.display = 'none';
+                    return;
+                }
+                
+                translationEl.style.display = 'block';
+                
+                // 전체 텍스트를 하나로 표시
+                const fullText = translationChunks
+                    .sort((a, b) => a.chunkId - b.chunkId)
+                    .map(chunk => chunk.text)
+                    .join(' ');
+                
+                translationContentEl.innerHTML = '';
+                
+                // 전체 텍스트를 표시
+                const textEl = document.createElement('div');
+                textEl.className = 'transcript-chunk';
+                textEl.textContent = fullText;
+                translationContentEl.appendChild(textEl);
+            }
+            
+            // 오디오 청크 처리 및 전송
+            function processAudioChunk(blob) {
+                // 청크 크기 로깅
+                log(`오디오 청크 데이터 크기: ${blob.size} 바이트`, 'info');
+                
+                // 데이터가 없으면 무시
+                if (blob.size === 0) {
+                    log(`빈 오디오 데이터, 전송 무시`, 'warning');
+                    return;
+                }
+                
+                // 파일 리더 생성
+                const reader = new FileReader();
+                
+                reader.onload = () => {
+                    // 결과를 base64로 인코딩
+                    const base64data = reader.result.split(',')[1];
+                    
+                    // 청크 번호 증가
+                    chunkCount++;
+                    
+                    // 소켓으로 전송
+                    socket.emit('audioChunk', {
+                        audio: base64data,
+                        format: 'audio/webm;codecs=opus',
+                        timestamp: new Date().toISOString(),
+                        chunkId: chunkCount
+                    });
+                    
+                    log(`오디오 청크 ${chunkCount} 전송: ${Math.round(base64data.length / 1024)} KB`, 'info');
+                };
+                
+                reader.readAsDataURL(blob);
+            }
+            
+            // 오디오 스트림 접근
+            async function getAudioStream() {
+                try {
+                    if (!audioStream) {
+                        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        log('마이크 접근 권한 획득', 'success');
+                    }
+                    return audioStream;
+                } catch (error) {
+                    log(`마이크 접근 오류: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            // 새로운 MediaRecorder 인스턴스 생성
+            async function createMediaRecorder() {
+                const stream = await getAudioStream();
+                if (!stream) return null;
+                
+                // 지원되는 MIME 타입 확인
+                const mimeTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/ogg;codecs=opus',
+                    'audio/ogg'
+                ];
+                
+                let selectedMimeType = null;
+                for (const mimeType of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(mimeType)) {
+                        selectedMimeType = mimeType;
+                        break;
+                    }
+                }
+                
+                if (!selectedMimeType) {
+                    log('지원되는 오디오 MIME 타입을 찾을 수 없습니다', 'error');
+                    return null;
+                }
+                
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: selectedMimeType,
+                    audioBitsPerSecond: 16000
+                });
+                
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && isRecording) {
+                        processAudioChunk(event.data);
+                    }
+                };
+                
+                return recorder;
+            }
+            
+            // 다음 MediaRecorder 미리 준비
+            async function prepareNextRecorder() {
+                if (!isRecording) return null;
+                
+                try {
+                    const newRecorder = await createMediaRecorder();
+                    log('다음 레코더 준비 완료', 'info');
+                    return newRecorder;
+                } catch (error) {
+                    log(`다음 레코더 준비 오류: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            // 3초 단위로 녹음 수행 (끊김 최소화)
+            async function recordChunk() {
+                if (!isRecording) return;
+                
+                try {
+                    // 첫 번째 실행이거나 오류 발생 시 mediaRecorder가 없을 수 있음
+                    if (!mediaRecorder) {
+                        mediaRecorder = await createMediaRecorder();
+                        if (!mediaRecorder) return;
+                    }
+                    
+                    // 이미 녹음 중인지 확인
+                    if (mediaRecorder.state === 'recording') {
+                        log('이미 녹음 중인 상태입니다. 중복 start() 호출 방지', 'warning');
+                        return;
+                    }
+                    
+                    // 다음 레코더 미리 준비 시작 (병렬 처리)
+                    const nextRecorderPromise = prepareNextRecorder();
+                    
+                    // 현재 레코더로 녹음 시작
+                    mediaRecorder.start();
+                    log(`녹음 청크 시작: 상태=${mediaRecorder.state}`, 'info');
+                    
+                    // 3초 후 중지 및 데이터 수집
+                    setTimeout(async () => {
+                        // 현재 레코더 중지 (레코더가 존재하고 녹음 중인 경우에만)
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                            log(`녹음 청크 종료: 상태=${mediaRecorder.state}`, 'info');
+                            
+                            try {
+                                // 다음 레코더 준비 완료 대기
+                                nextMediaRecorder = await nextRecorderPromise;
+                                
+                                // 다음 청크 녹음 시작 전 약간의 지연 추가 (상태 정리를 위해)
+                                if (isRecording && nextMediaRecorder) {
+                                    // 레코더 교체
+                                    const currentRecorder = mediaRecorder;
+                                    mediaRecorder = nextMediaRecorder;
+                                    nextMediaRecorder = null;
+                                    
+                                    // 약간의 지연 후 다음 청크 시작 (10ms - 거의 인지 못할 수준)
+                                    setTimeout(() => {
+                                        // 레코더 상태 확인 후 다음 청크 시작
+                                        if (isRecording && mediaRecorder && mediaRecorder.state !== 'recording') {
+                                            recordChunk();
+                                        }
+                                    }, 10);
+                                }
+                            } catch (err) {
+                                log(`레코더 전환 중 오류: ${err.message}`, 'error');
+                                // 오류 발생 시 현재 레코더로 계속 진행
+                                if (isRecording) {
+                                    setTimeout(recordChunk, 100);
+                                }
+                            }
+                        } else {
+                            // 이미 중지된 경우 다음 청크만 시작
+                            if (isRecording) {
+                                setTimeout(recordChunk, 100);
+                            }
+                        }
+                    }, 3000);
+                } catch (error) {
+                    log(`녹음 청크 오류: ${error.message}`, 'error');
+                    if (isRecording) {
+                        // 오류 발생 시 1초 후 재시도
+                        setTimeout(recordChunk, 1000);
+                    }
+                }
+            }
+            
+            // 녹음 시작
+            async function startRecording() {
+                if (!socket || !socket.connected) {
+                    log('서버에 연결되어 있지 않습니다', 'error');
+                    return;
+                }
+                
+                try {
+                    // 오디오 스트림 획득
+                    const stream = await getAudioStream();
+                    if (!stream) return;
+                    
+                    isRecording = true;
+                    chunkCount = 0;
+                    
+                    // 녹음 시작 알림
+                    socket.emit('startRecording');
+                    
+                    // 첫 번째 청크 녹음 시작
+                    recordChunk();
+                    
+                    updateStatus('녹음 중...');
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    // 이전 텍스트 변환 결과 초기화
+                    transcriptionChunks = [];
+                    updateTranscription();
+                    
+                    // 이전 번역 결과 초기화
+                    translationChunks = [];
+                    updateTranslation();
+                } catch (error) {
+                    log(`녹음 시작 오류: ${error.message}`, 'error');
+                    updateStatus('녹음 오류');
+                }
+            }
+            
+            // 녹음 중지
+            function stopRecordingChunks() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                    log('미디어 레코더 중지됨', 'info');
+                }
+                
+                // 다음 레코더도 정리
+                nextMediaRecorder = null;
+            }
+            
+            // 녹음 종료
+            function stopRecording() {
+                isRecording = false;
+                
+                // 현재 진행중인 녹음 중지
+                stopRecordingChunks();
+                
+                // 녹음 종료 알림
+                if (socket && socket.connected) {
+                    socket.emit('stopRecording');
+                }
+                
+                updateStatus('녹음 종료됨');
+                log('녹음이 종료되었습니다', 'info');
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+            
+            // 이벤트 리스너
+            startBtn.addEventListener('click', startRecording);
+            stopBtn.addEventListener('click', stopRecording);
+            
+            // 초기화
+            initSocket();
+        });
+    </script>
+</body>
+</html> 

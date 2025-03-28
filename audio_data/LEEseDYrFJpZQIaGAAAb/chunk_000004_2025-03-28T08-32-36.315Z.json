@@ -1,0 +1,24 @@
+{
+  "chunkId": 4,
+  "timestamp": "2025-03-28T08:32:36.315Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6554,
+  "sessionId": "LEEseDYrFJpZQIaGAAAb",
+  "fileName": "chunk_000004_2025-03-28T08-32-36.315Z",
+  "transcription": {
+    "success": true,
+    "text": "Well, we were talking, catching up",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1370
+  },
+  "translation": {
+    "success": true,
+    "originalText": "Well, we were talking, catching up",
+    "translatedText": "얘기하고 있었어요",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

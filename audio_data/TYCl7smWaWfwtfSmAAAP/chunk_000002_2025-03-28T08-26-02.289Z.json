@@ -1,0 +1,24 @@
+{
+  "chunkId": 2,
+  "timestamp": "2025-03-28T08:26:02.289Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6676,
+  "sessionId": "TYCl7smWaWfwtfSmAAAP",
+  "fileName": "chunk_000002_2025-03-28T08-26-02.289Z",
+  "transcription": {
+    "success": true,
+    "text": "I can't imagine that it's very stressful, but I can't let it get to you.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1435
+  },
+  "translation": {
+    "success": true,
+    "originalText": "I can't imagine that it's very stressful, but I can't let it get to you.",
+    "translatedText": "스트레스를 많이 받는다는 것은 상상할 수 없지만, 그 스트레스가 여러분을 괴롭히게 할 수는 없습니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

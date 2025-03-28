@@ -1,0 +1,24 @@
+{
+  "chunkId": 3,
+  "timestamp": "2025-03-28T08:28:14.749Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6766,
+  "sessionId": "U7AOBNIAMDtFmZQ_AAAT",
+  "fileName": "chunk_000003_2025-03-28T08-28-14.749Z",
+  "transcription": {
+    "success": true,
+    "text": "We're going to look today at the",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 4043
+  },
+  "translation": {
+    "success": true,
+    "originalText": "We're going to look today at the",
+    "translatedText": "오늘 살펴볼 내용은",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

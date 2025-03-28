@@ -1,0 +1,24 @@
+{
+  "chunkId": 1,
+  "timestamp": "2025-03-28T08:25:59.279Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 5978,
+  "sessionId": "TYCl7smWaWfwtfSmAAAP",
+  "fileName": "chunk_000001_2025-03-28T08-25-59.279Z",
+  "transcription": {
+    "success": true,
+    "text": "I think that's a good mindset to have to imagine.",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 1559
+  },
+  "translation": {
+    "success": true,
+    "originalText": "I think that's a good mindset to have to imagine.",
+    "translatedText": "상상하는 것은 좋은 마음가짐이라고 생각합니다.",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}

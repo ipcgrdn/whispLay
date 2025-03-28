@@ -1,0 +1,24 @@
+{
+  "chunkId": 1,
+  "timestamp": "2025-03-28T08:28:08.725Z",
+  "format": "audio/wav",
+  "originalFormat": "audio/webm;codecs=opus",
+  "size": 6065,
+  "sessionId": "U7AOBNIAMDtFmZQ_AAAT",
+  "fileName": "chunk_000001_2025-03-28T08-28-08.725Z",
+  "transcription": {
+    "success": true,
+    "text": "We have a very special lesson because we're going to",
+    "detectedLanguage": "en",
+    "error": null,
+    "processingTime": 2161
+  },
+  "translation": {
+    "success": true,
+    "originalText": "We have a very special lesson because we're going to",
+    "translatedText": "오늘은 아주 특별한 수업을 준비했습니다",
+    "detectedLanguage": null,
+    "isTranslated": true,
+    "error": null
+  }
+}
