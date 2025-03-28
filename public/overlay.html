@@ -24,22 +24,9 @@
             background-color: transparent;
         }
         
-        /* 번역 상태 표시 */
+        /* 번역 상태 표시 - 제거 */
         .translation-badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-weight: 500;
-            opacity: 1; /* 항상 표시 */
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none; /* 숨김 처리 */
         }
         
         .badge-dot {
@@ -62,12 +49,13 @@
             position: fixed;
             bottom: 10vh;
             left: 0;
-            width: 100%;
+            width: 70%;
             display: flex;
-            justify-content: center;
-            text-align: center;
+            justify-content: flex-start;
+            text-align: left;
             transition: opacity 0.5s ease;
             pointer-events: none;
+            padding-left: 5%;
         }
         
         .caption-container.hidden {
@@ -76,30 +64,31 @@
         
         .caption-box {
             max-width: 94%;
-            max-height: 300px; /* 최대 높이 300px로 변경 */
-            overflow: hidden; /* 넘치는 텍스트 숨김 */
+            max-height: 300px;
+            overflow: hidden;
             padding: 10px 20px;
             border-radius: 10px;
-            background-color: transparent; /* 배경 제거 */
+            background-color: transparent;
             transition: all 0.3s ease;
+            text-align: left;
         }
         
         .caption-text {
-            color: white; /* 텍스트 색상 흰색 */
-            font-size: 24px; /* 텍스트 크기 증가 */
-            line-height: 1.4;
+            color: white;
+            font-size: 20px;
+            line-height: 1.0;
             margin: 0;
             white-space: pre-wrap;
             word-break: keep-all;
             word-wrap: break-word;
-            font-weight: 700; /* 폰트 굵기 증가 */
-            /* 텍스트 테두리 효과 (여러 방향의 그림자로 구현) */
+            font-weight: 700;
+            text-align: left;
             text-shadow: 
-                -2px -2px 0 #000,
-                2px -2px 0 #000,
-                -2px 2px 0 #000,
-                2px 2px 0 #000,
-                0px 3px 2px rgba(0, 0, 0, 0.8);
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0px 2px 2px rgba(0, 0, 0, 0.8);
         }
         
         /* 타이핑 효과용 커서 */
@@ -110,9 +99,9 @@
             background-color: white;
             margin-left: 2px;
             position: relative;
-            top: 2px; /* 커서 위치 조정 */
+            top: 2px;
             animation: blink 0.7s infinite;
-            box-shadow: 0 0 3px #000; /* 커서에도 그림자 추가 */
+            box-shadow: 0 0 3px #000;
         }
         
         @keyframes blink {
@@ -120,14 +109,9 @@
             50% { opacity: 0; }
         }
         
-        /* 경고 문구 */
+        /* 경고 문구 - 제거 */
         .disclaimer {
-            position: absolute;
-            bottom: -20px;
-            right: 25px;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.7);
-            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+            display: none; /* 숨김 처리 */
         }
         
         @media (max-width: 768px) {
@@ -138,18 +122,14 @@
     </style>
 </head>
 <body>
-    <!-- 번역 상태 배지 -->
-    <div class="translation-badge" id="translationBadge">
-        <div class="badge-dot"></div>
-        <span>AI 실시간 번역 중...</span>
-    </div>
+    <!-- 번역 상태 배지 제거 -->
     
     <!-- 자막 컨테이너 -->
     <div class="caption-container" id="captionContainer">
         <div class="caption-box">
             <div class="caption-text" id="captionText"></div>
         </div>
-        <div class="disclaimer">* AI 자동 번역 결과로 부정확할 수 있습니다</div>
+        <!-- 경고 문구 제거 -->
     </div>
     
     <script src="/socket.io/socket.io.js"></script>
@@ -158,17 +138,16 @@
             // 요소 참조
             const captionContainer = document.getElementById('captionContainer');
             const captionText = document.getElementById('captionText');
-            const translationBadge = document.getElementById('translationBadge');
             
             // 변수 초기화
             let socket;
-            let fullText = ''; // 전체 번역 텍스트 (누적)
-            let newText = ''; // 새로 추가된 텍스트
-            let typingSpeed = 25; // 타이핑 속도 (ms)
+            let fullText = '';
+            let newText = '';
+            let typingSpeed = 25;
             let isTyping = false;
             let lastChunkId = 0;
-            const MAX_TEXT_LENGTH = 500; // 최대 텍스트 길이 (문자 수)
-            const MAX_SENTENCES = 6; // 표시할 최대 문장 수
+            const MAX_TEXT_LENGTH = 500;
+            const MAX_SENTENCES = 6;
             
             // 텍스트 길이 제한 함수
             function limitTextLength(text) {
