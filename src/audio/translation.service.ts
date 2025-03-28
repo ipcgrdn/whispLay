@@ -6,7 +6,7 @@ import { splitIntoSentences, cleanText } from '../utils/text-processing';
 export class TranslationService {
   private readonly logger = new Logger(TranslationService.name);
   private readonly translator: deepl.Translator;
-  private readonly targetLang: string = 'ko'; // 기본 대상 언어: 한국어
+  private readonly defaultTargetLang: string = 'ko'; // 기본 대상 언어: 한국어
 
   // Whisper API 언어 이름을 DeepL API 언어 코드로 변환하는 매핑
   private readonly languageMapping: Record<string, deepl.SourceLanguageCode | null> = {
@@ -116,16 +116,33 @@ export class TranslationService {
   }
   
   /**
+   * 소스 언어에 따라 대상 언어 결정
+   * 한국어인 경우 영어로, 그 외에는 한국어로 번역
+   * @param sourceLang 소스 언어 코드
+   * @returns 대상 언어 코드
+   */
+  private determineTargetLanguage(sourceLang: string | null): deepl.TargetLanguageCode {
+    // 소스 언어가 한국어인 경우
+    if (sourceLang === 'ko' || sourceLang === 'korean') {
+      this.logger.log('원본 언어가 한국어로 감지되어 영어로 번역합니다.');
+      return 'en-US' as deepl.TargetLanguageCode;
+    }
+    
+    // 그 외의 경우 한국어로 번역
+    return this.defaultTargetLang as deepl.TargetLanguageCode;
+  }
+  
+  /**
    * 단일 텍스트 번역
    * @param text 번역할 텍스트
    * @param sourceLang 원본 언어 (자동 감지: null)
-   * @param targetLang 대상 언어 (기본값: 한국어)
+   * @param targetLang 대상 언어 (기본값: 언어에 따라 자동 결정)
    * @returns 번역 결과와 상태 정보
    */
   public async translateText(
     text: string, 
     sourceLang: deepl.SourceLanguageCode | null = null,
-    targetLang: deepl.TargetLanguageCode = this.targetLang as deepl.TargetLanguageCode
+    targetLang?: deepl.TargetLanguageCode
   ): Promise<{ 
     success: boolean; 
     originalText: string;
@@ -147,11 +164,14 @@ export class TranslationService {
       
       this.logger.log(`텍스트 번역 시작: "${cleanedText.substring(0, 50)}${cleanedText.length > 50 ? '...' : ''}"`);
       
+      // 소스 언어가 한국어인 경우, 영어로 번역하기 위해 targetLang 결정
+      const actualTargetLang = targetLang || this.determineTargetLanguage(sourceLang);
+      
       // DeepL로 번역 요청
       const result = await this.translator.translateText(
         cleanedText,
         sourceLang,
-        targetLang,
+        actualTargetLang,
         {
           preserveFormatting: true,
           formality: 'default'
@@ -161,7 +181,19 @@ export class TranslationService {
       // 단일 텍스트 번역 결과
       const translation = Array.isArray(result) ? result[0] : result;
       
-      this.logger.log(`번역 완료 [${translation.detectedSourceLang} -> ${targetLang}]`);
+      // 원본 언어가 변경된 경우 대상 언어를 다시 결정
+      // (자동 감지로 인해 원본 언어가 바뀔 수 있음)
+      if (!sourceLang && translation.detectedSourceLang) {
+        const detectedSourceLang = translation.detectedSourceLang;
+        
+        // 감지된 언어가 한국어인데 대상 언어가 한국어인 경우 재번역
+        if ((detectedSourceLang === 'ko') && actualTargetLang === this.defaultTargetLang) {
+          this.logger.log('감지된 언어가 한국어입니다. 영어로 다시 번역합니다.');
+          return this.translateText(text, 'ko' as deepl.SourceLanguageCode, 'en-US' as deepl.TargetLanguageCode);
+        }
+      }
+      
+      this.logger.log(`번역 완료 [${translation.detectedSourceLang} -> ${actualTargetLang}]`);
       
       return {
         success: true,
@@ -183,13 +215,13 @@ export class TranslationService {
    * 텍스트를 문장 단위로 나누어 번역
    * @param text 번역할 전체 텍스트
    * @param sourceLang 원본 언어 (자동 감지: null)
-   * @param targetLang 대상 언어 (기본값: 한국어)
+   * @param targetLang 대상 언어 (기본값: 자동 결정)
    * @returns 문장별 번역 결과 배열
    */
   public async translateBySentences(
     text: string,
     sourceLang: string | null = null,
-    targetLang: deepl.TargetLanguageCode = this.targetLang as deepl.TargetLanguageCode
+    targetLang?: deepl.TargetLanguageCode
   ): Promise<{
     success: boolean;
     originalText: string;
@@ -213,6 +245,14 @@ export class TranslationService {
     try {
       // 텍스트 정리
       const cleanedText = cleanText(text);
+      
+      // 소스 언어에 따라 대상 언어 결정
+      const actualTargetLang = targetLang || this.determineTargetLanguage(sourceLang);
+      
+      // 감지된 언어가 한국어인 경우 targetLang을 영어로 변경
+      if (sourceLang === 'ko' || sourceLang === 'korean') {
+        this.logger.log('원본 언어가 한국어로 감지되어 영어로 번역합니다.');
+      }
       
       // 원본 언어 코드 변환
       const deeplSourceLang = this.convertToDeepLLanguageCode(sourceLang);
@@ -262,7 +302,7 @@ export class TranslationService {
           const result = await this.translator.translateText(
             sentence,
             deeplSourceLang,
-            targetLang,
+            actualTargetLang,
             {
               preserveFormatting: true,
               formality: 'default'
@@ -306,7 +346,7 @@ export class TranslationService {
           const fallbackResult = await this.translator.translateText(
             cleanedText,
             deeplSourceLang, 
-            targetLang,
+            actualTargetLang,
             {
               preserveFormatting: true,
               formality: 'default'

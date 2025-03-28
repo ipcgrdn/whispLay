@@ -179,45 +179,28 @@ export class AudioService {
           
           this.logger.log(`감지된 언어: ${sourceLang || '자동 감지'}`);
           
-          // 감지된 언어가 이미 한국어인 경우 번역하지 않음
+          // 감지된 언어가 이미 한국어인 경우 영어로 번역
           if (sourceLang === 'ko' || sourceLang === 'korean') {
-            // 검증: 텍스트에 영어가 많이 포함된 경우 언어 감지 실패로 판단하고 영어로 처리
-            const englishCharCount = (transcriptionResult.text.match(/[a-zA-Z]/g) || []).length;
-            const textLength = transcriptionResult.text.length;
+            this.logger.log('감지된 언어가 한국어입니다. 영어로 번역을 진행합니다.');
+            // 한국어를 영어로 번역
+            const result = await this.translationService.translateBySentences(
+              transcriptionResult.text,
+              sourceLang // 한국어로 명시하여 TranslationService에서 영어로 번역
+            );
             
-            // 영문자 비율이 50% 이상이면 영어로 강제 전환
-            if (englishCharCount / textLength > 0.5) {
-              this.logger.log('텍스트에 영문자가 많이 포함되어 있어 영어로 재설정합니다.');
-              
-              // 영어로 번역 수행
-              const result = await this.translationService.translateBySentences(
-                transcriptionResult.text,
-                'en'
-              );
-              
-              translationResult = {
-                ...result,
-                isTranslated: result.success,
-                detectedLanguage: 'en'
-              };
-              
-              if (result.success) {
-                this.logger.log('번역 완료 [en -> ko]');
-              } else {
-                this.logger.error(`번역 실패: ${result.error}`);
-              }
+            translationResult = {
+              ...result,
+              isTranslated: result.success,
+              detectedLanguage: sourceLang
+            };
+            
+            if (result.success) {
+              this.logger.log('번역 완료 [ko -> en]');
             } else {
-              this.logger.log('감지된 언어가 이미 한국어입니다. 번역 생략');
-              translationResult = {
-                success: true,
-                originalText: transcriptionResult.text,
-                translatedText: transcriptionResult.text,
-                detectedLanguage: 'ko',
-                isTranslated: false
-              };
+              this.logger.error(`번역 실패: ${result.error}`);
             }
           } else {
-            // 아닌 경우 번역 진행 - Whisper 언어 코드 그대로 전달 (TranslationService에서 변환)
+            // 다른 언어인 경우 한국어로 번역 진행
             const result = await this.translationService.translateBySentences(
               transcriptionResult.text,
               sourceLang // TranslationService에서 변환
