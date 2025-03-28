@@ -1,322 +1,362 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>실시간 번역 오버레이</title>
     <!-- Noto Sans CJK 폰트 로드 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        /* 기본 스타일 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      /* 기본 스타일 */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Noto Sans CJK KR', 'Noto Sans KR', sans-serif;
+        background-color: transparent;
+      }
+
+      /* 번역 상태 표시 - 제거 */
+      .translation-badge {
+        display: none; /* 숨김 처리 */
+      }
+
+      .badge-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #ff3333;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
         }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Noto Sans CJK KR', 'Noto Sans KR', sans-serif;
-            background-color: transparent;
+        50% {
+          opacity: 0.6;
+          transform: scale(0.8);
         }
-        
-        /* 번역 상태 표시 - 제거 */
-        .translation-badge {
-            display: none; /* 숨김 처리 */
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
-        
-        .badge-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #ff3333;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 1.5s infinite;
+      }
+
+      /* 자막 컨테이너 */
+      .caption-container {
+        position: fixed;
+        bottom: 10vh;
+        left: 0;
+        width: 70%;
+        display: flex;
+        justify-content: flex-start;
+        text-align: left;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+        padding-left: 5%;
+      }
+
+      .caption-container.hidden {
+        opacity: 0;
+      }
+
+      .caption-box {
+        max-width: 94%;
+        max-height: 300px;
+        overflow: hidden;
+        padding: 10px 20px;
+        border-radius: 10px;
+        background-color: transparent;
+        transition: all 0.3s ease;
+        text-align: left;
+      }
+
+      .caption-text {
+        color: white;
+        font-size: 20px;
+        line-height: 1.4;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: keep-all;
+        word-wrap: break-word;
+        font-weight: 700;
+        text-align: left;
+        text-shadow:
+          -1px -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          2px 1px 0 #000,
+          0px 0px 3px rgba(0, 0, 0, 0.8);
+      }
+
+      /* 타이핑 효과용 커서 */
+      .typing-cursor {
+        display: inline-block;
+        width: 3px;
+        height: 1.2em;
+        background-color: white;
+        margin-left: 2px;
+        position: relative;
+        top: 2px;
+        animation: blink 0.7s infinite;
+        box-shadow: 0 0 3px #000;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
         }
-        
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
+        50% {
+          opacity: 0;
         }
-        
-        /* 자막 컨테이너 */
-        .caption-container {
-            position: fixed;
-            bottom: 10vh;
-            left: 0;
-            width: 70%;
-            display: flex;
-            justify-content: flex-start;
-            text-align: left;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-            padding-left: 5%;
-        }
-        
-        .caption-container.hidden {
-            opacity: 0;
-        }
-        
-        .caption-box {
-            max-width: 94%;
-            max-height: 300px;
-            overflow: hidden;
-            padding: 10px 20px;
-            border-radius: 10px;
-            background-color: transparent;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-        
+      }
+
+      /* 경고 문구 - 제거 */
+      .disclaimer {
+        display: none; /* 숨김 처리 */
+      }
+
+      @media (max-width: 768px) {
         .caption-text {
-            color: white;
-            font-size: 20px;
-            line-height: 1.4;
-            margin: 0;
-            white-space: pre-wrap;
-            word-break: keep-all;
-            word-wrap: break-word;
-            font-weight: 700;
-            text-align: left;
-            text-shadow: 
-                -1px -1px 0 #000,
-                0px -2px 0 rgba(0, 0, 0, 0.8),
-                2px -1px 0 #000,
-                -1px 2px 0 #000,
-                1px 1px 0 #000,
-                0px 2px 2px rgba(0, 0, 0, 0.8);
+          font-size: 20px;
         }
-        
-        /* 타이핑 효과용 커서 */
-        .typing-cursor {
-            display: inline-block;
-            width: 3px;
-            height: 1.2em;
-            background-color: white;
-            margin-left: 2px;
-            position: relative;
-            top: 2px;
-            animation: blink 0.7s infinite;
-            box-shadow: 0 0 3px #000;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-        
-        /* 경고 문구 - 제거 */
-        .disclaimer {
-            display: none; /* 숨김 처리 */
-        }
-        
-        @media (max-width: 768px) {
-            .caption-text {
-                font-size: 20px;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- 번역 상태 배지 제거 -->
-    
+
     <!-- 자막 컨테이너 -->
     <div class="caption-container" id="captionContainer">
-        <div class="caption-box">
-            <div class="caption-text" id="captionText"></div>
-        </div>
-        <!-- 경고 문구 제거 -->
+      <div class="caption-box">
+        <div class="caption-text" id="captionText"></div>
+      </div>
+      <!-- 경고 문구 제거 -->
     </div>
-    
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 요소 참조
-            const captionContainer = document.getElementById('captionContainer');
-            const captionText = document.getElementById('captionText');
-            
-            // 변수 초기화
-            let socket;
-            let fullText = '';
-            let newText = '';
-            let typingSpeed = 25;
-            let isTyping = false;
-            let lastChunkId = 0;
-            const MAX_TEXT_LENGTH = 500;
-            const MAX_SENTENCES = 6;
-            
-            // 텍스트 길이 제한 함수
-            function limitTextLength(text) {
-                if (text.length <= MAX_TEXT_LENGTH) return text;
-                
-                // 텍스트가 너무 길면 앞부분 자르기
-                const sentences = text.split(/(?<=[.!?])\s+/);
-                if (sentences.length > MAX_SENTENCES) {
-                    // 오래된 문장 제거 (앞부분부터)
-                    return sentences.slice(sentences.length - MAX_SENTENCES).join(' ');
-                }
-                
-                // 문장 단위로 자르기가 적합하지 않으면 문자 단위로 자르기
-                return '...' + text.substring(text.length - MAX_TEXT_LENGTH);
-            }
-            
-            // 타이핑 효과 함수
-            function typeNewText() {
-                if (!newText || isTyping) return;
-                
-                isTyping = true;
-                const captionText = document.querySelector('.caption-text');
-                const textToType = newText;
-                newText = '';
-                
-                // 캡션 컨테이너 표시
-                document.querySelector('.caption-container').classList.remove('hidden');
-                
-                // 첫 번째 타이핑이 아니고 앞의 텍스트가 띄어쓰기로 끝나지 않는 경우
-                // 필요한 경우 띄어쓰기 보정 (이중 띄어쓰기 방지)
-                if (fullText && fullText.length > 0 && !fullText.endsWith(' ') && !textToType.startsWith(' ')) {
-                    fullText += ' ';
-                }
-                
-                let i = 0;
-                const intervalId = setInterval(() => {
-                    if (i < textToType.length) {
-                        fullText += textToType[i];
-                        // 텍스트 길이 제한 적용
-                        const limitedText = limitTextLength(fullText);
-                        captionText.textContent = limitedText;
-                        i++;
-                    } else {
-                        clearInterval(intervalId);
-                        isTyping = false;
-                        // 다음 텍스트가 있으면 타이핑 계속
-                        if (newText) {
-                            setTimeout(typeNewText, 300);
-                        }
-                    }
-                }, typingSpeed);
-            }
-            
-            // 소켓 연결 초기화
-            function initSocket() {
-                console.log('소켓 연결 시작...');
-                
-                // 소켓 연결
-                const socketUrl = window.location.protocol + '//' + window.location.host;
-                socket = io(socketUrl, {
-                    reconnectionDelayMax: 10000,
-                    transports: ['websocket']
-                });
+      document.addEventListener('DOMContentLoaded', () => {
+        // 요소 참조
+        const captionContainer = document.getElementById('captionContainer');
+        const captionText = document.getElementById('captionText');
 
-                // 연결 이벤트
-                socket.on('connect', () => {
-                    console.log('소켓 연결됨: ' + socket.id + ' - ' + new Date().toLocaleTimeString());
-                    
-                    // 연결 1초 후 최신 번역 데이터 요청
-                    setTimeout(() => {
-                        console.log('최신 번역 데이터 요청');
-                        socket.emit('requestLatestTranslations');
-                    }, 1000);
-                });
+        // 변수 초기화
+        let socket;
+        let fullText = '';
+        let newText = '';
+        let typingSpeed = 25;
+        let isTyping = false;
+        let lastChunkId = 0;
+        const MAX_TEXT_LENGTH = 500;
+        const MAX_SENTENCES = 6;
 
-                // 연결 끊김 이벤트
-                socket.on('disconnect', () => {
-                    console.log('소켓 연결 끊김: ' + new Date().toLocaleTimeString());
-                });
+        // 텍스트 길이 제한 함수
+        function limitTextLength(text) {
+          if (text.length <= MAX_TEXT_LENGTH) return text;
 
-                // 에러 이벤트
-                socket.on('connect_error', (error) => {
-                    console.error('소켓 연결 오류:', error);
-                });
+          // 텍스트가 너무 길면 앞부분 자르기
+          const sentences = text.split(/(?<=[.!?])\s+/);
+          if (sentences.length > MAX_SENTENCES) {
+            // 오래된 문장 제거 (앞부분부터)
+            return sentences.slice(sentences.length - MAX_SENTENCES).join(' ');
+          }
 
-                // 번역 결과 이벤트
-                socket.on('translationResult', (data) => {
-                    console.log('번역 결과 수신:', data);
-                    
-                    // 이미 처리한 청크인지 확인
-                    if (data.chunkId && data.chunkId <= lastChunkId) {
-                        console.log(`이미 처리된 청크 무시 (ID: ${data.chunkId}, 마지막 처리: ${lastChunkId})`);
-                        return;
-                    }
-                    
-                    // 청크 ID 업데이트
-                    if (data.chunkId) {
-                        lastChunkId = data.chunkId;
-                    }
-                    
-                    if (!data || !data.text) {
-                        console.warn('빈 번역 데이터 수신');
-                        return;
-                    }
-                    
-                    // 첫 번째 실제 번역 데이터가 도착하면 테스트 텍스트를 지움
-                    if (fullText === captionText.textContent && (captionText.textContent.includes("테스트 텍스트") || captionText.textContent.includes("testing purposes"))) {
-                        console.log("테스트 텍스트 지우고 실제 번역으로 대체");
-                        fullText = '';
-                        captionText.textContent = '';
-                    }
-                    
-                    // 번역 텍스트 추가 (항상 띄어쓰기 포함)
-                    if (newText === '') {
-                        newText = data.text;
-                    } else {
-                        // 무조건 띄어쓰기 한 칸 추가
-                        newText += ' ' + data.text;
-                    }
-                    
-                    console.log(`텍스트 추가: "${data.text}" (원본 언어: ${data.originalLanguage || '알 수 없음'})`);
-                    
-                    // 타이핑 효과 시작
-                    if (!isTyping) {
-                        typeNewText();
-                    }
-                });
+          // 문장 단위로 자르기가 적합하지 않으면 문자 단위로 자르기
+          return '...' + text.substring(text.length - MAX_TEXT_LENGTH);
+        }
+
+        // 타이핑 효과 함수
+        function typeNewText() {
+          if (!newText || isTyping) return;
+
+          isTyping = true;
+          const captionText = document.querySelector('.caption-text');
+          const textToType = newText;
+          newText = '';
+
+          // 캡션 컨테이너 표시
+          document
+            .querySelector('.caption-container')
+            .classList.remove('hidden');
+
+          // 첫 번째 타이핑이 아니고 앞의 텍스트가 띄어쓰기로 끝나지 않는 경우
+          // 필요한 경우 띄어쓰기 보정 (이중 띄어쓰기 방지)
+          if (
+            fullText &&
+            fullText.length > 0 &&
+            !fullText.endsWith(' ') &&
+            !textToType.startsWith(' ')
+          ) {
+            fullText += ' ';
+          }
+
+          let i = 0;
+          const intervalId = setInterval(() => {
+            if (i < textToType.length) {
+              fullText += textToType[i];
+              // 텍스트 길이 제한 적용
+              const limitedText = limitTextLength(fullText);
+              captionText.textContent = limitedText;
+              i++;
+            } else {
+              clearInterval(intervalId);
+              isTyping = false;
+              // 다음 텍스트가 있으면 타이핑 계속
+              if (newText) {
+                setTimeout(typeNewText, 300);
+              }
             }
-            
-            // URL 파라미터 처리
-            function getUrlParams() {
-                const params = new URLSearchParams(window.location.search);
-                
-                // 타이핑 속도
-                if (params.has('speed')) {
-                    const speed = parseInt(params.get('speed'));
-                    if (!isNaN(speed) && speed > 0) typingSpeed = speed;
-                }
-                
-                // 글꼴 크기
-                if (params.has('fontSize')) {
-                    captionText.style.fontSize = params.get('fontSize');
-                }
-                
-                // 배경 불투명도
-                if (params.has('bgOpacity')) {
-                    const opacity = parseFloat(params.get('bgOpacity'));
-                    if (!isNaN(opacity) && opacity >= 0 && opacity <= 1) {
-                        document.querySelector('.caption-box').style.backgroundColor = `rgba(0, 0, 0, ${opacity})`;
-                    }
-                }
-            }
-            
-            // 초기화 및 실행
-            getUrlParams();
-            initSocket();
-            
-            // 오버레이 테스트를 위한 초기 텍스트 설정
+          }, typingSpeed);
+        }
+
+        // 소켓 연결 초기화
+        function initSocket() {
+          console.log('소켓 연결 시작...');
+
+          // 소켓 연결
+          const socketUrl =
+            window.location.protocol + '//' + window.location.host;
+          socket = io(socketUrl, {
+            reconnectionDelayMax: 10000,
+            transports: ['websocket'],
+          });
+
+          // 연결 이벤트
+          socket.on('connect', () => {
+            console.log(
+              '소켓 연결됨: ' +
+                socket.id +
+                ' - ' +
+                new Date().toLocaleTimeString(),
+            );
+
+            // 연결 1초 후 최신 번역 데이터 요청
             setTimeout(() => {
-                if (fullText === '' && !newText && !isTyping) {  // 아직 실제 번역 데이터가 없는 경우에만 테스트 텍스트 표시
-                    console.log("테스트 텍스트 표시");
-                    
-                    // 영어와 한국어 모두 지원하는 테스트 메시지
-                    captionText.textContent = "OBS Overlay is working! 다국어 번역 지원. This text is for testing purposes. 테스트용 메시지입니다.";
-                    fullText = captionText.textContent;
-                }
+              console.log('최신 번역 데이터 요청');
+              socket.emit('requestLatestTranslations');
             }, 1000);
-        });
+          });
+
+          // 연결 끊김 이벤트
+          socket.on('disconnect', () => {
+            console.log('소켓 연결 끊김: ' + new Date().toLocaleTimeString());
+          });
+
+          // 에러 이벤트
+          socket.on('connect_error', (error) => {
+            console.error('소켓 연결 오류:', error);
+          });
+
+          // 번역 결과 이벤트
+          socket.on('translationResult', (data) => {
+            console.log('번역 결과 수신:', data);
+
+            // 이미 처리한 청크인지 확인
+            if (data.chunkId && data.chunkId <= lastChunkId) {
+              console.log(
+                `이미 처리된 청크 무시 (ID: ${data.chunkId}, 마지막 처리: ${lastChunkId})`,
+              );
+              return;
+            }
+
+            // 청크 ID 업데이트
+            if (data.chunkId) {
+              lastChunkId = data.chunkId;
+            }
+
+            if (!data || !data.text) {
+              console.warn('빈 번역 데이터 수신');
+              return;
+            }
+
+            // 첫 번째 실제 번역 데이터가 도착하면 테스트 텍스트를 지움
+            if (
+              fullText === captionText.textContent &&
+              (captionText.textContent.includes('테스트 텍스트') ||
+                captionText.textContent.includes('testing purposes'))
+            ) {
+              console.log('테스트 텍스트 지우고 실제 번역으로 대체');
+              fullText = '';
+              captionText.textContent = '';
+            }
+
+            // 번역 텍스트 추가 (항상 띄어쓰기 포함)
+            if (newText === '') {
+              newText = data.text;
+            } else {
+              // 무조건 띄어쓰기 한 칸 추가
+              newText += ' ' + data.text;
+            }
+
+            console.log(
+              `텍스트 추가: "${data.text}" (원본 언어: ${data.originalLanguage || '알 수 없음'})`,
+            );
+
+            // 타이핑 효과 시작
+            if (!isTyping) {
+              typeNewText();
+            }
+          });
+        }
+
+        // URL 파라미터 처리
+        function getUrlParams() {
+          const params = new URLSearchParams(window.location.search);
+
+          // 타이핑 속도
+          if (params.has('speed')) {
+            const speed = parseInt(params.get('speed'));
+            if (!isNaN(speed) && speed > 0) typingSpeed = speed;
+          }
+
+          // 글꼴 크기
+          if (params.has('fontSize')) {
+            captionText.style.fontSize = params.get('fontSize');
+          }
+
+          // 배경 불투명도
+          if (params.has('bgOpacity')) {
+            const opacity = parseFloat(params.get('bgOpacity'));
+            if (!isNaN(opacity) && opacity >= 0 && opacity <= 1) {
+              document.querySelector('.caption-box').style.backgroundColor =
+                `rgba(0, 0, 0, ${opacity})`;
+            }
+          }
+        }
+
+        // 초기화 및 실행
+        getUrlParams();
+        initSocket();
+
+        // 오버레이 테스트를 위한 초기 텍스트 설정
+        setTimeout(() => {
+          if (fullText === '' && !newText && !isTyping) {
+            // 아직 실제 번역 데이터가 없는 경우에만 테스트 텍스트 표시
+            console.log('테스트 텍스트 표시');
+
+            // 영어와 한국어 모두 지원하는 테스트 메시지
+            captionText.textContent =
+              'OBS Overlay is working! 다국어 번역 지원. This text is for testing purposes. 테스트용 메시지입니다.';
+            fullText = captionText.textContent;
+          }
+        }, 1000);
+      });
     </script>
-</body>
-</html> 
+  </body>
+</html>
